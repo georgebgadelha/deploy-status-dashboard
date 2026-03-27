@@ -1,0 +1,31 @@
+.fallback {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+
+.fallback h3 {
+  color: #dc2626;
+  margin: 0 0 8px;
+}
+
+.fallback p {
+  color: #666;
+  margin: 0 0 12px;
+}
+
+.retry {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.retry:hover {
+  background: #b91c1c;
+}
