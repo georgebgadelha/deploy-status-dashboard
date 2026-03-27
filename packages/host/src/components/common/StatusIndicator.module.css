@@ -28,6 +28,21 @@
   color: #757575;
 }
 
+.active {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.inactive {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.archived {
+  background: #eceff1;
+  color: #546e7f;
+}
+
 .dot {
   width: 8px;
   height: 8px;

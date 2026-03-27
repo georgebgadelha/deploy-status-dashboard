@@ -12,18 +12,23 @@ interface Project {
 
 interface Props {
   project: Project;
+  referrer?: string;
 }
 
-export default function ProjectCard({ project }: Props) {
+export default function ProjectCard({ project, referrer = '/projects' }: Props) {
   const navigate = useNavigate();
+
+  const goToDetail = () => {
+    navigate(`/projects/${project._id}`, { state: { referrer } });
+  };
 
   return (
     <div
       className={styles.card}
-      onClick={() => navigate(`/projects/${project._id}`)}
+      onClick={goToDetail}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && navigate(`/projects/${project._id}`)}
+      onKeyDown={(e) => e.key === 'Enter' && goToDetail()}
     >
       <h3 className={styles.name}>{project.name}</h3>
       <p className={styles.desc}>{project.description}</p>

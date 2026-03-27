@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import QuickDeploy from '../common/QuickDeploy';
 import styles from './DashboardLayout.module.css';
 
 export default function DashboardLayout() {
@@ -13,6 +14,7 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+      <QuickDeploy />
     </div>
   );
 }

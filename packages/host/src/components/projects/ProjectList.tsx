@@ -12,9 +12,10 @@ interface Project {
 
 interface Props {
   projects: Project[];
+  referrer?: string;
 }
 
-export default function ProjectList({ projects }: Props) {
+export default function ProjectList({ projects, referrer = '/projects' }: Props) {
   if (projects.length === 0) {
     return <div className={styles.empty}>No projects found</div>;
   }
@@ -22,7 +23,7 @@ export default function ProjectList({ projects }: Props) {
   return (
     <div className={styles.grid}>
       {projects.map((project) => (
-        <ProjectCard key={project._id} project={project} />
+        <ProjectCard key={project._id} project={project} referrer={referrer} />
       ))}
     </div>
   );

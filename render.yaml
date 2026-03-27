@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: zephyr-deploy-bff
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: NODE_ENV=development npm install && npm run build -w packages/shared && npm run build -w packages/bff
+    startCommand: node packages/bff/dist/app.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: API_KEY
+        sync: false
+      - key: REMOTE_METRICS_URL
+        value: https://dev-george-gadelha-gmail-com-46-zephyr-deploy-rem-2c27f9e55-ze.zephyrcloud.app/remoteEntry.js

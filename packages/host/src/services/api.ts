@@ -1,12 +1,11 @@
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001/api/v1';
-const API_KEY = process.env.API_KEY || 'zephyr-dev-api-key-2024';
+import { CONFIG } from '../config/constants';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(`${CONFIG.API.BASE_URL}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
+      'x-api-key': CONFIG.API.KEY,
       ...options.headers,
     },
   });
@@ -21,30 +20,44 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  getProjects(params?: Record<string, string>) {
+  async getProjects(params?: Record<string, string>) {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return request<any>(`/projects${qs}`);
   },
 
-  getProject(id: string) {
+  async getProject(id: string) {
     return request<any>(`/projects/${id}`);
   },
 
-  getProjectDeploys(id: string, params?: Record<string, string>) {
+  async getProjectDeploys(id: string, params?: Record<string, string>) {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return request<any>(`/projects/${id}/deploys${qs}`);
   },
 
-  getDeploys(params?: Record<string, string>) {
+  async getDeploys(params?: Record<string, string>) {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return request<any>(`/deploys${qs}`);
   },
 
-  getMetricsOverview(period = '30d') {
+  async getMetricsOverview(period = '30d') {
     return request<any>(`/metrics/overview?period=${period}`);
   },
 
-  getProjectMetrics(id: string, period = '30d') {
+  async getProjectMetrics(id: string, period = '30d') {
     return request<any>(`/metrics/projects/${id}?period=${period}`);
+  },
+
+  async createDeploy(projectId: string, environment: string, branch: string) {
+    return request<any>('/deploys', {
+      method: 'POST',
+      body: JSON.stringify({ projectId, environment, branch }),
+    });
+  },
+
+  async updateDeployStatus(id: string, status: string) {
+    return request<any>(`/deploys/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
   },
 };

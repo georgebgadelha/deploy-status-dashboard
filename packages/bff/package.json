@@ -9,6 +9,7 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "seed": "ts-node src/seed/index.ts",
+    "seed:prod": "MONGODB_URI=$MONGODB_URI ts-node src/seed/index.ts",
     "test": "jest",
     "test:coverage": "jest --coverage"
   },

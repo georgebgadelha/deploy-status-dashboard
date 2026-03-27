@@ -1,10 +1,18 @@
 import { lazy, Suspense } from 'react';
 import { useProjects } from '../hooks/useProjects';
+import { loadRemoteModule } from '../utils/module-federation';
+import { CONFIG } from '../config/constants';
 import ProjectList from '../components/projects/ProjectList';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 
-const MetricsWidget = lazy(() => import('remoteMetrics/MetricsWidget'));
+const MetricsWidget = lazy(() =>
+  loadRemoteModule(
+    CONFIG.MODULE_FEDERATION.REMOTE_METRICS_URL,
+    CONFIG.MODULE_FEDERATION.SCOPE,
+    CONFIG.MODULE_FEDERATION.MODULE
+  )
+);
 
 export default function DashboardPage() {
   const { data, loading, error } = useProjects();
@@ -16,14 +24,14 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <ErrorBoundary fallbackMessage="Metrics remote is unavailable. Make sure the remote-metrics app is running on port 3002.">
+      <ErrorBoundary fallbackMessage="Metrics remote is unavailable.">
         <Suspense fallback={<LoadingSpinner />}>
           <MetricsWidget />
         </Suspense>
       </ErrorBoundary>
 
       <h2>Projects</h2>
-      <ProjectList projects={projects} />
+      <ProjectList projects={projects} referrer="/" />
     </div>
   );
 }

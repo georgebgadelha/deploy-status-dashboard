@@ -9,6 +9,9 @@ const labels: Record<string, string> = {
   failed: 'Failed',
   in_progress: 'In Progress',
   cancelled: 'Cancelled',
+  active: 'Active',
+  inactive: 'Inactive',
+  archived: 'Archived',
 };
 
 export default function StatusIndicator({ status }: Props) {

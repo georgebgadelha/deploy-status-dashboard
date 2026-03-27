@@ -1,10 +1,14 @@
 import path from 'path';
+import { fileURLToPath } from 'url';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
-import { container } from 'webpack';
+import webpack from 'webpack';
 import type { Configuration } from 'webpack';
 import 'webpack-dev-server';
+import { withZephyr } from 'zephyr-webpack-plugin';
 
-const { ModuleFederationPlugin } = container;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const { ModuleFederationPlugin } = webpack.container;
 
 const config: Configuration = {
   entry: './src/index.tsx',
@@ -62,4 +66,4 @@ const config: Configuration = {
   },
 };
 
-export default config;
+export default withZephyr()(config);

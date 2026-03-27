@@ -4,100 +4,331 @@ A deploy monitoring dashboard built with Module Federation, Express, and MongoDB
 
 ## Overview
 
-This project simulates a simplified version of a deploy monitoring platform. A host application displays project listings and deploy history, while a remote application provides metrics widgets loaded dynamically via Webpack Module Federation. A BFF (Backend for Frontend) in Express serves aggregated data from MongoDB.
+This project simulates a simplified version of a deploy monitoring platform. It demonstrates three independent applications working together:
+
+- **Host App**: React dashboard deployed on Zephyr Cloud edge. Main entry point with project listings, deploy history, and dynamic metrics loading.
+- **Remote Metrics Widget**: React component served separately and loaded dynamically into the host via Module Federation. Displays success rates, build times, and deploy distribution.
+- **BFF (Backend for Frontend)**: Express API deployed on Render, serving aggregated data from MongoDB Atlas. Handles authentication and complex queries.
+
+## Live Demo
+
+- **Host Dashboard**: [https://dev-george-gadelha-gmail-com-78-zephyr-deploy-hos-0890232ef-ze.zephyrcloud.app/](https://dev-george-gadelha-gmail-com-78-zephyr-deploy-hos-0890232ef-ze.zephyrcloud.app/)
+- **Remote Metrics Widget**: [https://dev-george-gadelha-gmail-com-77-zephyr-deploy-rem-617de04df-ze.zephyrcloud.app/](https://dev-george-gadelha-gmail-com-77-zephyr-deploy-rem-617de04df-ze.zephyrcloud.app/)
+- **BFF API**: [https://zephyr-deploy-bff.onrender.com/api/v1/projects](https://zephyr-deploy-bff.onrender.com/api/v1/projects) (requires `x-api-key: zephyr-dev-api-key-2024` header)
 
 ## Architecture
 
 ```
-┌──────────────┐     MF remoteEntry.js     ┌──────────────────┐
-│   Host App   │ ◄─────────────────────── │  Remote Metrics  │
-│  (port 3000) │                           │   (port 3002)    │
-└──────┬───────┘                           └────────┬─────────┘
-       │                                            │
-       │  REST /api/v1/*                            │  REST /api/v1/*
-       │  x-api-key auth                            │  x-api-key auth
-       ▼                                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                     BFF (port 3001)                         │
-│  Express + Mongoose                                         │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-                          ▼
-                   ┌──────────────┐
-                   │   MongoDB    │
-                   └──────────────┘
+┌──────────────────────┐  MF remoteEntry.js    ┌──────────────────────┐
+│  Host App (Zephyr)   │ ◄──────────────────   │ Remote (Zephyr)      │
+│ Dashboard & routing  │                       │ Metrics Widget       │
+└──────────┬───────────┘                       └──────────┬───────────┘
+           │                                              │
+           │ REST /api/v1/*                               │ REST /api/v1/*
+           │ x-api-key auth                               │ x-api-key auth
+           ▼                                              ▼
+┌────────────────────────────────────────────────────────────────┐
+│         BFF API (Express on Render.com)                        │
+│ Database queries, auth, rate limiting, data aggregation        │
+└─────────────────────────────┬──────────────────────────────────┘
+                              │
+                              ▼
+                   ┌──────────────────────┐
+                   │  MongoDB Atlas       │
+                   │ 3 projects, 63 deploys
+                   │ with metrics         │
+                   └──────────────────────┘
 ```
 
-| Package | Description |
-| --- | --- |
-| `packages/shared` | Constants, types, and utility functions used across apps |
-| `packages/bff` | Express REST API with Mongoose models, services, and aggregation pipelines |
-| `packages/host` | React dashboard with routing, project listing, deploy history |
-| `packages/remote-metrics` | React metrics widget exposed via Module Federation |
-
-## Tech stack
-
-| Technology | Role | Reason |
+| Package | Description | Deployed at |
 | --- | --- | --- |
-| TypeScript 5.7 | Language | Type safety across the monorepo |
-| React 18.3 | Frontend | Component model, hooks, Suspense for lazy loading |
-| Webpack 5 + Module Federation | Micro-frontends | Dynamic remote loading without rebuilding the host |
-| Express 4.21 | BFF server | Familiar, well-documented, sufficient for the scope |
-| Mongoose 8.9 | ODM | Document-oriented data maps well to deploy records |
-| MongoDB 8.x | Database | Flexible schema, native aggregation pipelines for metrics |
-| CSS Modules | Styling | Scoped styles with zero runtime cost |
-| Jest + React Testing Library | Testing | Standard tooling, co-located tests |
-| npm workspaces | Monorepo | Built-in, no extra tooling needed |
+| `packages/shared` | Constants, types, and utilities | Local monorepo |
+| `packages/bff` | Express REST API, Mongoose models | https://zephyr-deploy-bff.onrender.com |
+| `packages/host` |React dashboard, Module Federation host | Zephyr Cloud edge (see live demo) |
+| `packages/remote-metrics` | Metrics widget loaded dynamically | Zephyr Cloud edge (separate deployment) |
 
-## Getting started
+## Tech Stack
+
+| Technology | Role | Why chosen |
+| --- | --- | --- |
+| TypeScript 5.7 | Language | Full type safety across monorepo |
+| React 18.3 | Frontend | Efficient rendering, hooks, Suspense support |
+| Webpack 5 + MF | Micro-frontends | Independent deployments, zero host rebuild |
+| Express 4.21 | BFF server | Lightweight, perfect for aggregation layer |
+| Mongoose 8.9 | Data layer | Clean schema modeling for deploys/projects |
+| MongoDB 8.x | Database | Flexible documents, built-in aggregation pipelines |
+| Zephyr Cloud | Frontend hosting | Edge deployment, automatic rollouts |
+| Render.com | BFF hosting | Simple serverless deployment, includes health checks |
+| CSS Modules | Styling | Scoped, zero-JavaScript overhead |
+
+## Features
+
+### Dashboard
+- **Project Listing**: Browse all projects with status badges (active, inactive, archived)
+- **Deploy History**: Timeline of deploys per project with environment tags
+- **Metrics Overview**: Real-time success rates, build times, deploy distribution (loaded from remote widget)
+- **Intelligent Navigation**: Back button remembers whether you came from Dashboard or Projects page
+- **Quick Deploy Button**: Floating action button to simulate triggering a new deploy and watch metrics update in real-time
+
+### BFF API
+- **Authentication**: Simple `x-api-key` header validation
+- **Pagination**: All list endpoints support `page` and `limit` query parameters (max 100)
+- **Rate Limiting**: Global limit 100 req/min, writes 10 req/min
+- **Aggregation**: Complex MongoDB pipelines for metrics (success rate, avg build time, deploys per environment)
+- **Health Check**: GET `/health` endpoint for Render monitoring
+
+### Data Model
+- **Projects**: 3 demo projects with static details
+- **Deploys**: 15-25 deploys per project across production/staging/preview environments
+- **Statuses**: success (~70%), failed (~15%), in_progress (~5%), cancelled (~10%)
+- **Metrics**: Aggregated per project and globally
+
+## Getting Started
 
 ### Prerequisites
 
 - Node.js >= 22 (see `.nvmrc`)
-- MongoDB running locally (or a connection string)
+- MongoDB connection string (MongoDB Atlas or local)
 - npm >= 10
 
-### Installation
+### Installation (Local Development)
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/georgebgadelha/deploy-status-dashboard.git
 cd Zephyr
 npm install
+
+# Setup environment
 cp .env.example .env
-# Edit .env if your MongoDB runs on a different URI
+# Edit .env with your MongoDB URI
+# MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/zephyr-deploy-dashboard
+
+# Seed the database
 npm run seed
 ```
 
-### Running the apps
+### Running Locally
 
 ```bash
-# Start all three in separate terminals:
-npm run dev:bff          # BFF on http://localhost:3001
-npm run dev:remote       # Remote metrics on http://localhost:3002
-npm run dev:host         # Host dashboard on http://localhost:3000
+# Terminal 1: Start BFF
+npm run dev:bff          # http://localhost:3001
 
-# Or start BFF alone and build frontend:
+# Terminal 2: Start Remote metrics widget
+npm run dev:remote       # http://localhost:3002
+
+# Terminal 3: Start Host dashboard
+npm run dev:host         # http://localhost:3000
+```
+
+### Building for Deployment
+
+Builds capture `ZE_PUBLIC_*` environment variables at build-time via webpack DefinePlugin:
+
+```bash
+# Build all packages
 npm run build
+
+# Build with environment variables (for Zephyr/Render CI/CD)
+ZE_PUBLIC_REMOTE_METRICS_URL="https://..." \
+ZE_PUBLIC_API_BASE_URL="https://zephyr-deploy-bff.onrender.com/api/v1" \
+ZE_PUBLIC_API_KEY="your-api-key" \
+npm run build -w packages/host
+
+# Backend (BFF) builds with regular env vars
+NODE_ENV=production \
+MONGODB_URI="mongodb+srv://..." \
+API_KEY="your-api-key" \
+npm run build -w packages/bff
 ```
 
-### Environment variables
+## Environment Variables
 
-| Variable | Description | Default |
-| --- | --- | --- |
-| `PORT` | BFF server port | `3001` |
-| `MONGODB_URI` | MongoDB connection string | `mongodb://localhost:27017/zephyr-deploy-dashboard` |
-| `API_KEY` | API key for x-api-key auth | `zephyr-dev-api-key-2024` |
-| `NODE_ENV` | Environment mode | `development` |
-| `HOST_PORT` | Host app dev server port | `3000` |
-| `REMOTE_PORT` | Remote metrics dev server port | `3002` |
-| `API_BASE_URL` | Base URL for frontend API calls | `http://localhost:3001/api/v1` |
+Copy `.env.example` to `.env` for local development. This project uses **Zephyr's `ZE_PUBLIC_*` system**:
 
-### Running tests
+- **Build-time**: Zephyr captures all `ZE_PUBLIC_*` variables during build (includes in `zephyr-manifest.json`)
+- **Runtime**: Each environment (dev, staging, prod) can override values **without rebuilding**
+- **Security**: Only non-sensitive values are client-side. Backend secrets stay on Render.
+
+| Variable | Scope | Required | Description | Set at |
+| --- | --- | --- | --- | --- |
+| **Frontend (Host & Remote):** | | | | |
+| `ZE_PUBLIC_REMOTE_METRICS_URL` | Host | ✅ | Remote widget remoteEntry.js URL (webpack injects at build-time) | Zephyr dashboard → Environment Variables |
+| `ZE_PUBLIC_API_BASE_URL` | Host+Remote | ✅ | BFF API endpoint (webpack injects at build-time) | Zephyr dashboard → Environment Variables |
+| `ZE_PUBLIC_API_KEY` | Host+Remote | ✅ | API key sent in x-api-key header (webpack injects at build-time) | Zephyr dashboard → Environment Variables |
+| **Backend (BFF on Render):** | | | | |
+| `MONGODB_URI` | BFF | ✅ | MongoDB Atlas connection string | Render.com dashboard → Environment |
+| `API_KEY` | BFF | ✅ | Server-side API key for client validation | Render.com dashboard → Environment |
+| `NODE_ENV` | BFF | ✅ | Runtime environment (development/production) | Render.com dashboard → Environment |
+| `PORT` | BFF | ❌ | Server port (default: 3001, auto-assigned on Render) | Render.com dashboard or .env
+| **Local dev only:** | | | | |
+| `HOST_PORT` | Local dev | ❌ | Host dev server port (default 3000) | .env file |
+| `REMOTE_PORT` | Local dev | ❌ | Remote dev server port (default 3002) | .env file |
+| `PORT` | Local dev | ❌ | BFF dev server port (default 3001) | .env file |
+
+**Local development setup**:
+```bash
+# Copy template and edit with localhost URLs
+cp .env.example .env
+
+# Default values in .env for local development:
+# ZE_PUBLIC_REMOTE_METRICS_URL=http://localhost:3002/remoteEntry.js
+# ZE_PUBLIC_API_BASE_URL=http://localhost:3001/api/v1
+```
+
+**Production setup (Zephyr Cloud)**:
+1. Go to your app in [Zephyr Cloud dashboard](https://app.zephyr-cloud.io)
+2. Navigate to **Environment Variables** section
+3. Set these variables:
+   - `ZE_PUBLIC_REMOTE_METRICS_URL`: https://dev-george-gadelha-gmail-com-77-zephyr-deploy-rem-617de04df-ze.zephyrcloud.app/remoteEntry.js
+   - `ZE_PUBLIC_API_BASE_URL`: https://zephyr-deploy-bff.onrender.com/api/v1
+   - `ZE_PUBLIC_API_KEY`: Your API key
+4. Run `npm run build` — Zephyr captures these values at build time
+5. Later, change values in dashboard and they apply immediately without rebuild
+
+## Testing
+
+**Testing infrastructure is configured but tests are not yet implemented.** To add tests:
 
 ```bash
-npm test                # All packages
-npm run test:coverage   # With coverage report
+# Jest is configured for all packages
+npm test                # Run tests across all packages
+npm run test:coverage   # Run with coverage reports
+
+# Create tests in packages/bff, packages/host, or packages/remote-metrics
+# Example: packages/bff/src/controllers/__tests__/project.controller.spec.ts
 ```
+
+## API Reference
+
+### BFF Endpoints
+
+#### Projects
+```
+GET    /api/v1/projects                      # List all projects
+GET    /api/v1/projects?page=1&limit=10
+GET    /api/v1/projects/:id                  # Get project by ID
+GET    /api/v1/projects/:id/deploys          # Get deploys for project
+GET    /api/v1/projects/:id/deploys?env=production&status=success
+```
+
+#### Deploys
+```
+GET    /api/v1/deploys                       # List all deploys
+GET    /api/v1/deploys?page=1&limit=20&status=success
+GET    /api/v1/deploys/:id                   # Get deploy by ID
+POST   /api/v1/deploys                       # Create deploy (for simulation)
+PATCH  /api/v1/deploys/:id/status            # Update deploy status
+```
+
+#### Metrics
+```
+GET    /api/v1/metrics/overview?period=7d   # Global metrics (7d or 30d)
+GET    /api/v1/metrics/projects/:id?period=30d
+```
+
+All endpoints require `x-api-key: zephyr-dev-api-key-2024` header.
+
+## Code Structure
+
+### Backend (`packages/bff`)
+```
+src/
+ ├── controllers/        # Request handlers
+ ├── services/           # Business logic
+ ├── repositories/       # Database queries
+ ├── models/             # Mongoose schemas
+ ├── middlewares/        # Express middlewares
+ ├── routes/             # API endpoint definitions
+ ├── config/             # Environment, database
+ ├── utils/              # Shared utilities
+ └── seed/               # Demo data generator
+```
+
+### Frontend Host (`packages/host`)
+```
+src/
+ ├── components/
+ │  ├── layout/          # DashboardLayout, Sidebar, Header
+ │  ├── projects/        # ProjectList, ProjectCard
+ │  ├── deploys/         # DeployHistory, DeployDetail
+ │  └── common/          # StatusIndicator, LoadingSpinner, QuickDeploy
+ ├── pages/              # Route components (Dashboard, Projects, ProjectDetail)
+ ├── hooks/              # useApi, useProjects, useDeploys
+ ├── services/           # api.ts (HTTP client)
+ ├── config/             # constants.ts (centralized config)
+ └── utils/              # module-federation.ts (MF utilities)
+```
+
+### Remote Metrics (`packages/remote-metrics`)
+```
+src/
+ ├── components/         # MetricsWidget, charts
+ ├── hooks/              # useMetricsOverview
+ ├── services/           # api.ts (HTTP client)
+ └── App.tsx             # Standalone root
+```
+
+## Key Design Decisions
+
+1. **Module Federation for Remote Widget**: Allows independent deployment and versioning of the metrics widget. Host doesn't need rebuilding when remote updates.
+
+2. **Monorepo with npm Workspaces**: Enables code sharing (`packages/shared`) without extra tooling. Simpler collaboration within a single graph.
+
+3. **Express BFF**: Aggregates MongoDB queries (e.g., computing success rates) server-side, reducing frontend complexity and network overhead.
+
+4. **CSS Modules**: Scoped styles eliminate naming conflicts and bundle bloat. No runtime CSS-in-JS needed.
+
+5. **MongoDB Aggregation Pipelines**: Complex metrics are computed at query time with `$group` and `$match`. No separate metrics table.
+
+6. **Render + Atlas**: Simple deployment for BFF and data persistence. Render redeploys on git push automatically.
+
+## Development Workflow
+
+```bash
+# Make changes
+git checkout -b feature/your-feature
+
+# Test locally
+npm run dev:bff &
+npm run dev:remote &
+npm run dev:host &
+
+# Run tests
+npm test
+
+# Commit (follow conventional commits)
+git commit -m "feat: add feature" -m "Detailed description"
+
+# Build and verify
+npm run build
+
+# Push and deploy via Zephyr/Render dashboards
+git push origin feature/your-feature
+```
+
+## Troubleshooting
+
+### BFF not responding
+- Check MongoDB connection: `MONGODB_URI` must include database name (e.g., `/zephyr-deploy-dashboard`)
+- Verify API key in requests: `x-api-key: zephyr-dev-api-key-2024`
+- Check Render logs for boot errors
+
+### Frontend blank screen
+- Open browser DevTools → Network tab → check if remoteEntry.js loads
+- Check if `REMOTE_METRICS_URL` points to a valid deployment
+- Verify `API_BASE_URL` is reachable
+
+### Module Federation errors
+- "Remote container not found" → Ensure remote is deployed and `REMOTE_METRICS_URL` is correct
+- "Share scope not initialized" → Check browser console for webpack errors
+
+## License
+
+This project is a technical assessment for Valor Software.
+
+## Contact
+
+George Gadelha ([@georgebgadelha](https://github.com/georgebgadelha))
 
 ### API endpoints
 
@@ -167,7 +398,3 @@ What could be improved:
 6. Observability with OpenTelemetry (tracing, structured logging)
 7. Cursor-based pagination for large datasets
 8. Deploy log streaming via SSE
-
-## License
-
-MIT
