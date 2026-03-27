@@ -1,0 +1,32 @@
+{
+  "name": "zephyr-deploy-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Deploy monitoring dashboard built with Module Federation and deployed via Zephyr Cloud",
+  "workspaces": [
+    "packages/shared",
+    "packages/bff",
+    "packages/host",
+    "packages/remote-metrics"
+  ],
+  "scripts": {
+    "dev": "concurrently -n bff,host,remote -c blue,green,magenta \"npm run dev -w packages/bff\" \"npm run dev -w packages/host\" \"npm run dev -w packages/remote-metrics\"",
+    "dev:bff": "npm run dev -w packages/bff",
+    "dev:host": "npm run dev -w packages/host",
+    "dev:remote": "npm run dev -w packages/remote-metrics",
+    "build": "npm run build -w packages/shared && npm run build -w packages/bff && npm run build -w packages/host && npm run build -w packages/remote-metrics",
+    "test": "npm run test -w packages/shared && npm run test -w packages/bff && npm run test -w packages/host && npm run test -w packages/remote-metrics",
+    "test:coverage": "npm run test:coverage -w packages/bff && npm run test:coverage -w packages/host && npm run test:coverage -w packages/remote-metrics",
+    "seed": "npm run seed -w packages/bff",
+    "lint": "eslint packages/*/src/**/*.{ts,tsx}"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
