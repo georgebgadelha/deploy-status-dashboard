@@ -1,0 +1,30 @@
+.widget {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kpi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.error {
+  color: #ef4444;
+  padding: 16px;
+  background: #fef2f2;
+  border-radius: 8px;
+}
+
+.loading {
+  text-align: center;
+  padding: 32px;
+  color: #888;
+}
