@@ -10,12 +10,12 @@ const config: Config = {
     '\\.module\\.css$': 'identity-obj-proxy',
     '\\.css$': '<rootDir>/src/__mocks__/styleMock.ts',
   },
-  setupFilesAfterSetup: ['@testing-library/jest-dom'],
+  setupFilesAfterEnv: ['@testing-library/jest-dom'],
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/index.tsx',
-    '!src/bootstrap.ts',
+    '!src/bootstrap.tsx',
   ],
 };
 
