@@ -2,6 +2,36 @@
 
 A deploy monitoring dashboard built with Module Federation, Express, and MongoDB. Technical challenge submission for the Senior Backend Node.js position at Valor Software.
 
+## Challenge Submission: Zephyr Platform Feedback
+
+### How it works
+
+Zephyr Cloud is an edge deployment platform. This project uses it to host two independent React applications (Host Dashboard and Remote Metrics Widget) that communicate via Module Federation, which loads remote components at runtime.
+
+Workflow:
+1. Host app is deployed to Zephyr Cloud edge and acts as the main dashboard
+2. Remote app is deployed separately to another Zephyr Cloud edge location
+3. Host loads the remote's `remoteEntry.js` at runtime and imports the Metrics component
+4. Both apps call a BFF (Backend for Frontend) Express API on Render for data and authentication
+5. Environment variables are injected at build-time via webpack DefinePlugin, with runtime overrides through Zephyr's `ZE_PUBLIC_*` system
+
+### What worked well
+
+- One-click deployments via Git integration. No manual configuration after setup.
+- Environment abstraction. `ZE_PUBLIC_*` variables separate build-time defaults from runtime values.
+- Zero-downtime deployments. Version numbers in URLs prevent cache conflicts.
+- Clear deployment logs and straightforward CLI.
+
+### What could improve
+
+- Documentation. A worked example showing Module Federation with Zephyr would help adoption.
+- Error messages. Build failures should show more context about missing `ZE_PUBLIC_*` variables.
+- Local development. How to simulate Zephyr's `ZE_PUBLIC_*` injection locally is not clear.
+
+GitHub: [georgebgadelha/deploy-status-dashboard](https://github.com/georgebgadelha/deploy-status-dashboard) (see [Live Demo](#live-demo) for deployed URLs)
+
+---
+
 ## Overview
 
 This project simulates a simplified version of a deploy monitoring platform. It demonstrates three independent applications working together:
@@ -306,30 +336,6 @@ npm run build
 git push origin feature/your-feature
 ```
 
-## Troubleshooting
-
-### BFF not responding
-- Check MongoDB connection: `MONGODB_URI` must include database name (e.g., `/zephyr-deploy-dashboard`)
-- Verify API key in requests: `x-api-key: zephyr-dev-api-key-2024`
-- Check Render logs for boot errors
-
-### Frontend blank screen
-- Open browser DevTools → Network tab → check if remoteEntry.js loads
-- Check if `REMOTE_METRICS_URL` points to a valid deployment
-- Verify `API_BASE_URL` is reachable
-
-### Module Federation errors
-- "Remote container not found" → Ensure remote is deployed and `REMOTE_METRICS_URL` is correct
-- "Share scope not initialized" → Check browser console for webpack errors
-
-## License
-
-This project is a technical assessment for Valor Software.
-
-## Contact
-
-George Gadelha ([@georgebgadelha](https://github.com/georgebgadelha))
-
 ### API endpoints
 
 All endpoints require the `x-api-key` header.
@@ -347,34 +353,6 @@ All endpoints require the `x-api-key` header.
 | GET | `/api/v1/metrics/projects/:id` | Metrics for a specific project |
 | GET | `/health` | Health check (no auth required) |
 
-## Live demo
-
-> Links will be added after deployment to Zephyr Cloud.
-
-- Host App: TBD
-- Remote Metrics: TBD
-- BFF API: TBD
-
-## Zephyr Cloud experience
-
-### How it works
-
-Zephyr Cloud integrates into the Webpack build process through a plugin. During builds, it captures the Module Federation manifest and deploys the output to edge infrastructure. Each build gets a unique version, making rollbacks straightforward. The platform manages remote entry URLs so the host always resolves the correct version of each remote.
-
-### Module Federation + Zephyr
-
-Zephyr handles the versioning and distribution of Module Federation remotes. Instead of hardcoding remote URLs, the platform resolves them at runtime based on version rules. This decouples deploy cycles between host and remote apps, so either can ship independently without coordinating releases.
-
-### Feedback
-
-What worked well:
-- The concept of edge-deployed Module Federation with versioning is strong. It addresses a real pain point in micro-frontend architectures where coordinating remote versions is error-prone.
-- The build plugin approach means minimal changes to existing Webpack configs.
-
-What could be improved:
-- Documentation around local development setup and debugging federation issues would help adoption.
-- Clearer examples of rollback flows and version pinning strategies in the docs.
-
 ## Trade-offs and future work
 
 ### Key decisions
@@ -383,8 +361,6 @@ What could be improved:
 | --- | --- |
 | Simulated auth (x-api-key) | Simplicity over real security. Production would need JWT + OAuth2. |
 | MongoDB over PostgreSQL | Deploy data is document-oriented. Relational integrity is less critical here. |
-| CSS Modules over Tailwind | Zero runtime cost, sufficient for the project size. |
-| Express over Fastify | More recognizable in code review, despite lower throughput. |
 | No global state management | React hooks + fetch are enough for ~5 screens. |
 | Metrics computed on-demand | Small dataset makes aggregation pipelines instant. Production: pre-computed with cron. |
 
